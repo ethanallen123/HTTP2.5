@@ -26,6 +26,7 @@ class SCTP_Socket {
     public:
         bool sctp_bind(std::string_view ip_address, int port);
         bool sctp_run();
+        void sctp_close();
         Association_Key sctp_associate(std::string_view ip_address, int port); // Adds a new association object to the map and returns the association id
         int await_established_association(const Association_Key& association_id, int timeout_ms);
         void sctp_send_data(const sockaddr_in& association_id, const std::vector<uint8_t>& data);

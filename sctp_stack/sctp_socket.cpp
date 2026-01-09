@@ -54,15 +54,7 @@ bool SCTP_Socket::sctp_bind(std::string_view ip_address, int port) {
 }
 
 SCTP_Socket::~SCTP_Socket() {
-    running = false;
-    if (event_loop_thread.joinable()) {
-        event_loop_thread.join();
-    }
-    if (udp_socket != INVALID_SOCKET) {
-        closesocket(udp_socket);
-    }
-    WSACleanup();
-    std::cout << "Socket destroyed successfully" << std::endl;
+    sctp_close();
 }
 
 bool SCTP_Socket::sctp_run() {
@@ -74,6 +66,19 @@ bool SCTP_Socket::sctp_run() {
 
     event_loop_thread = std::thread(&SCTP_Socket::event_loop, this);
     return true;
+}
+
+void SCTP_Socket::sctp_close() {
+    running = false;
+    if (event_loop_thread.joinable()) {
+        event_loop_thread.join();
+    }
+    if (udp_socket != INVALID_SOCKET) {
+        closesocket(udp_socket);
+        udp_socket = INVALID_SOCKET;
+    }
+    WSACleanup();
+    std::cout << "Socket closed successfully" << std::endl;
 }
 
 Association_Key SCTP_Socket::sctp_associate(std::string_view ip_address, int port) {

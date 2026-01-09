@@ -39,7 +39,7 @@ void test_parse_request_body() {
     std::cout << "Testing parse_request_body:" << std::endl;
     std::string_view raw_body = "This is the body of the request.";
     size_t start_pos = 0;
-    auto result = parse_request_body(raw_body, start_pos);  
+    auto result = parse_request_body(raw_body, start_pos, raw_body.size());  
     if (result) {
         auto [body, next_pos] = *result;
         std::string body_str(body.begin(), body.end());
@@ -57,6 +57,7 @@ void test_parse_http_request() {
         "GET /index.html HTTP/2.5\r\n"
         "Host: example.com\r\n"
         "User-Agent: TestAgent\r\n"
+        "Content-Length: 32\r\n"
         "\r\n"
         "This is the body of the request.";
     std::vector<uint8_t> raw_request_vec(raw_request.begin(), raw_request.end());
