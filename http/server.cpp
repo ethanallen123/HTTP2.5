@@ -1,5 +1,7 @@
 #include "server.hpp"
 #include "../sctp_stack/sctp_socket.hpp"
+#include "http_response.hpp"
+#include "http_parse.hpp"
 #include <string_view>
 #include <stdexcept>
 
@@ -16,10 +18,44 @@ void Server::start() {
         socket.sctp_close();
         throw std::runtime_error("Failed to start SCTP socket");
     }
+    running = true;
+    processor_thread = std::thread(&Server::process_requests, this);
+}
+
+void Server::process_requests() {
+    while(running) {
+        std::vector<uint8_t> recv_buffer(8192);
+        size_t received = socket.sctp_recv_data(recv_buffer);
+        if (received > 0) {
+            recv_buffer.resize(received);
+            auto request_opt = parse_http_request(recv_buffer);
+            if (!request_opt) {
+                continue; 
+            }
+            Request request = *request_opt;
+
+            auto route_match = match_route(request.request_line.uri);
+            Response response;
+            if (route_match) {
+                Route* route = route_match->first;
+                auto& params = route_match->second;
+                response = route->handler(request, params);
+            } else {
+                response = create_response(Status_Code::NotFound, std::vector<uint8_t>{});
+            }
+
+            std::vector<uint8_t> serialized_response = serialize_response(response);
+            socket.sctp_send_data(socket.get_this_association_key(), serialized_response);
+        }
+    }
 }
 
 void Server::stop() {
     socket.sctp_close();
+    running = false;
+    if (processor_thread.joinable()) {
+        processor_thread.join();
+    }
 }
 
 void Server::register_route(const std::string& pattern, std::function<Response(const Request&, const std::unordered_map<std::string, std::string>&)> handler) {

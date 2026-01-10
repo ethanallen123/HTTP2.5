@@ -1,12 +1,12 @@
 #include "http_response.hpp"
 #include "http_parse.hpp"
 
-Response create_response(Status_Code status_code, const std::string& body) {
+Response create_response(Status_Code status_code, const std::vector<uint8_t>& body) {
     Response response;
 
     response.response_line = create_response_line(status_code);
     response.headers = create_standard_headers(body);
-    response.body = std::vector<uint8_t>(body.begin(), body.end());
+    response.body = body;
 
     return response;
 }
@@ -36,7 +36,7 @@ Response_Line create_response_line(const Status_Code& code) {
     return line;
 }
 
-std::unordered_map<std::string, std::string> create_standard_headers(const std::string& body) {
+std::unordered_map<std::string, std::string> create_standard_headers(const std::vector<uint8_t>& body) {
     std::unordered_map<std::string, std::string> headers;
     headers["Content-Length"] = std::to_string(body.size());
     headers["Content-Type"] = "text/plain";

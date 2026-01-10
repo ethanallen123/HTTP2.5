@@ -25,7 +25,7 @@ struct Response {
     std::vector<uint8_t> body;
 };
 
-Response create_response(Status_Code status_code, const std::string& body);
+Response create_response(Status_Code status_code, const std::vector<uint8_t>& body);
 std::vector<uint8_t> serialize_response(const Response& response);
 
 #endif

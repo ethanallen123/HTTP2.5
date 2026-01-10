@@ -30,8 +30,11 @@ class Server {
         std::string ip_address;
         std::vector<Route> routes;
         int port;
+        bool running;
+        std::thread processor_thread;
         
         std::optional<std::pair<Route*, std::unordered_map<std::string, std::string>>> match_route(const std::string& uri);
+        void process_requests();
 };
 
 #endif
