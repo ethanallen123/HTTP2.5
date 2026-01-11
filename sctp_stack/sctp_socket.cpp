@@ -201,6 +201,27 @@ void SCTP_Socket::sctp_send_data(const Association_Key& association_id, const st
     sending_lock.unlock();
 }
 
+size_t SCTP_Socket::sctp_recv_data(std::vector<uint8_t>& buffer) {
+    std::unique_lock<std::mutex> assoc_lock(associations_mutex);
+    for (auto& [key, assoc] : associations) {
+        if (assoc.state != ESTABLISHED) {
+            continue;
+        }
+        if (assoc.ulp_buffer.empty()) {
+            continue;
+        }
+
+        std::vector<uint8_t> data = assoc.ulp_buffer.front();
+        assoc.ulp_buffer.pop();
+        assoc_lock.unlock();
+
+        size_t to_copy = std::min(buffer.size(), data.size());
+        std::memcpy(const_cast<uint8_t*>(buffer.data()), data.data(), to_copy);
+        return to_copy;
+    }
+    return 0;
+}
+
 size_t SCTP_Socket::sctp_recv_data_from(const sockaddr_in& association_id, std::vector<uint8_t>& buffer) {
     Association_Key key{association_id};
     return sctp_recv_data_from(key, buffer);

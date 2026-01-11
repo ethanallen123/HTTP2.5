@@ -3,7 +3,7 @@
     "tasks": [
         {
             "type": "cppbuild",
-            "label": "C/C++: gcc.exe build all files to main.exe",
+            "label": "C/C++: gcc.exe build all sctp files to main.exe",
             "command": "g++",
             "args": [
                 "-fdiagnostics-color=always",
@@ -14,6 +14,37 @@
                 "${workspaceFolder}\\sctp_stack\\sctp_checksum.cpp",
                 "-o",
                 "${workspaceFolder}\\sctp_stack\\main.exe",
+                "-lws2_32"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "Build all C files in the directory into main.exe"
+        },
+        {
+            "type": "cppbuild",
+            "label": "C/C++: gcc.exe build all http files to main.exe",
+            "command": "g++",
+            "args": [
+                "-fdiagnostics-color=always",
+                "-g",
+                "${workspaceFolder}\\sctp_stack\\sctp_serialize.cpp",
+                "${workspaceFolder}\\sctp_stack\\sctp_socket.cpp",
+                "${workspaceFolder}\\sctp_stack\\sctp_checksum.cpp",
+                "${workspaceFolder}\\http\\main.cpp",
+                "${workspaceFolder}\\http\\http_parse.cpp",
+                "${workspaceFolder}\\http\\http_response.cpp",
+                "${workspaceFolder}\\http\\client.cpp",
+                "${workspaceFolder}\\http\\server.cpp",
+                "-o",
+                "${workspaceFolder}\\http\\main.exe",
                 "-lws2_32"
             ],
             "options": {

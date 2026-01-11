@@ -26,6 +26,8 @@ struct Response {
 };
 
 Response create_response(Status_Code status_code, const std::vector<uint8_t>& body);
+Response_Line create_response_line(const Status_Code& code);
+std::unordered_map<std::string, std::string> create_standard_headers(const std::vector<uint8_t>& body);
 std::vector<uint8_t> serialize_response(const Response& response);
 
 #endif

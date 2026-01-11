@@ -2,6 +2,7 @@
 #define HTTP_PARSE_HPP
 
 #include "http_request.hpp"
+#include "http_response.hpp"
 #include <vector>
 #include <string_view>
 #include <optional>
