@@ -20,7 +20,7 @@ struct Route {
 
 class Server {
     public:
-        Server(std::string_view ip_address, int p);
+        Server(std::string_view ip, int p);
         ~Server();
         void start();
         void stop();

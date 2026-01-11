@@ -1,5 +1,6 @@
 #include "http_parse.hpp"
 #include "http_request.hpp"
+#include "http_response.hpp"
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -165,4 +166,82 @@ std::optional<std::tuple<std::vector<uint8_t>, size_t>> parse_request_body(std::
     }
     
     return std::make_tuple(body, pos);
+}
+
+std::vector<uint8_t> serialize_request(const Request& request) {
+    std::vector<uint8_t> serialized;
+
+    std::string request_line = request.request_line.method + " " +
+                               request.request_line.uri + " " +
+                               request.request_line.version + std::string(SEPERATOR);
+    serialized.insert(serialized.end(), request_line.begin(), request_line.end());
+
+    for (const auto& [key, value] : request.headers) {
+        std::string header_line = key + ": " + value + std::string(SEPERATOR);
+        serialized.insert(serialized.end(), header_line.begin(), header_line.end());
+    }
+
+    serialized.insert(serialized.end(), SEPERATOR.begin(), SEPERATOR.end());
+
+    serialized.insert(serialized.end(), request.body.begin(), request.body.end());
+
+    return serialized;
+}
+
+// TODO: Seperate into helper functions
+std::optional<Response> parse_http_response(const std::vector<uint8_t>& raw_response) {
+    std::string response_str(raw_response.begin(), raw_response.end());
+    
+    size_t status_line_end = response_str.find("\r\n");
+    if (status_line_end == std::string::npos) {
+        std::cout << "Malformed response (No CRLF found in status line)\n";
+        return std::nullopt;
+    }
+    
+    std::string status_line = response_str.substr(0, status_line_end);
+    
+    size_t first_space = status_line.find(" ");
+    size_t second_space = status_line.find(" ", first_space + 1);
+    
+    if (first_space == std::string::npos || second_space == std::string::npos) {
+        std::cout << "Malformed status line: " << status_line << "\n";
+        return std::nullopt;
+    }
+    
+    Response response;
+    response.response_line.version = status_line.substr(0, first_space);
+    response.response_line.status_code = static_cast<Status_Code>(std::stoi(status_line.substr(first_space + 1, second_space - first_space - 1)));
+    response.response_line.reason_phrase = status_line.substr(second_space + 1);
+    
+    size_t headers_end = response_str.find("\r\n\r\n", status_line_end);
+    if (headers_end == std::string::npos) {
+        std::cout << "Malformed response (No blank line between headers and body)\n";
+        return std::nullopt;
+    }
+    
+    size_t current_pos = status_line_end + 2;
+    while (current_pos < headers_end) {
+        size_t line_end = response_str.find("\r\n", current_pos);
+        if (line_end == std::string::npos || line_end > headers_end) {
+            break;
+        }
+        
+        std::string header_line = response_str.substr(current_pos, line_end - current_pos);
+        size_t colon_pos = header_line.find(":");
+        
+        if (colon_pos != std::string::npos) {
+            std::string header_name = header_line.substr(0, colon_pos);
+            std::string header_value = header_line.substr(colon_pos + 2); 
+            response.headers[header_name] = header_value;
+        }
+        
+        current_pos = line_end + 2;
+    }
+    
+    size_t body_start = headers_end + 4; 
+    if (body_start < raw_response.size()) {
+        response.body.insert(response.body.end(), raw_response.begin() + body_start, raw_response.end());
+    }
+    
+    return response;
 }

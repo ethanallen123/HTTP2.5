@@ -9,7 +9,7 @@
 
 class Client {
     public:
-        Client(const std::string& server_ip, int server_port);
+        Client(const std::string& ip, int port);
         ~Client();
         
         std::optional<Response> get_request(const std::string& uri);
@@ -18,19 +18,17 @@ class Client {
         std::optional<Response> delete_request(const std::string& uri);
         std::optional<Response> send_request(const Request& request);
         
-        bool connect();
+        bool connect(const std::string& server_ip, int server_port);
         void disconnect();
         bool is_connected() const;
         
     private:
         SCTP_Socket socket;
-        std::string server_ip;
-        int server_port;
+        std::string ip_address;
+        int port;
         bool connected;
         
         Request build_request(const std::string& method, const std::string& uri, const std::string& body = "");
-        
-        std::optional<Response> parse_response(const std::vector<uint8_t>& raw_response);
 };
 
 #endif

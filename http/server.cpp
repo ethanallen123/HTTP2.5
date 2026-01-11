@@ -5,8 +5,8 @@
 #include <string_view>
 #include <stdexcept>
 
-Server::Server(std::string_view ip_address, int p) : port(p), socket() {
-    socket.sctp_bind(ip_address, port);
+Server::Server(std::string_view ip, int p) : ip_address(ip), port(p), running(false), socket() {
+    socket.sctp_bind(ip, port);
 }
 
 Server::~Server() {
