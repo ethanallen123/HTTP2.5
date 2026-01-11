@@ -14,16 +14,31 @@ Client::~Client() {
     }
 }
 
+void Client::start() {
+    if (!socket.sctp_run()) {
+        socket.sctp_close();
+        throw std::runtime_error("Failed to start SCTP socket");
+    }
+}
+
+void Client::stop() {
+    if (connected) {
+        disconnect();
+    }
+    socket.sctp_close();
+}
+
 bool Client::connect(const std::string& server_ip, int server_port) {
     try {
         // Associate with the server
-        socket.sctp_associate(server_ip, server_port);
+        Association_Key key = socket.sctp_associate(server_ip, server_port);
         
         // Wait for association to be established
-        int result = socket.await_established_association(socket.get_this_association_key(), 5000);
+        int result = socket.await_established_association(key, 5000);
         
         if (result == 0) {
             connected = true;
+            server_association_key = key;
             return true;
         } else {
             std::cout << "Failed to establish SCTP association with server\n";
@@ -73,27 +88,26 @@ std::optional<Response> Client::send_request(const Request& request) {
         return std::nullopt;
     }
     
+    size_t received{0};
     try {
-        // Serialize the request
-        std::vector<uint8_t> serialized_request = serialize_request(request);
-        
-        // Send the request
-        socket.sctp_send_data(socket.get_this_association_key(), serialized_request);
-        
-        // Receive the response
-        std::vector<uint8_t> response_buffer(65536);
-        size_t received = socket.sctp_recv_data_from(socket.get_this_association_key(), response_buffer);
-        
-        if (received == 0) {
-            std::cout << "No response received from server\n";
-            return std::nullopt;
+        while (received == 0) {
+            // Serialize the request
+            std::vector<uint8_t> serialized_request = serialize_request(request);
+                
+            // Send the request
+            socket.sctp_send_data(server_association_key, serialized_request);
+            
+            // Receive the response
+            std::vector<uint8_t> response_buffer(65536);
+            received = socket.sctp_recv_data_from(server_association_key, response_buffer);
+            
+            if (received > 0) {
+                response_buffer.resize(received);
+                return parse_http_response(response_buffer);
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
-        
-        response_buffer.resize(received);
-        
-        // Parse the response
-        return parse_http_response(response_buffer);
-        
+        return std::nullopt;
     } catch (const std::exception& e) {
         std::cout << "Error sending request: " << e.what() << "\n";
         return std::nullopt;

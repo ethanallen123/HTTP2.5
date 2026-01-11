@@ -31,7 +31,7 @@ class SCTP_Socket {
         int await_established_association(const Association_Key& association_id, int timeout_ms);
         void sctp_send_data(const sockaddr_in& association_id, const std::vector<uint8_t>& data);
         void sctp_send_data(const Association_Key& association_id, const std::vector<uint8_t>& data);
-        size_t sctp_recv_data(std::vector<uint8_t>& buffer);
+        size_t sctp_recv_data(std::vector<uint8_t>& buffer, Association_Key* out_association_id = nullptr);
         size_t sctp_recv_data_from(const sockaddr_in& association_id, std::vector<uint8_t>& buffer);
         size_t sctp_recv_data_from(const Association_Key& association_id, std::vector<uint8_t>& buffer);
         Association_Key get_this_association_key();

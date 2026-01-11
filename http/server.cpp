@@ -4,6 +4,7 @@
 #include "http_parse.hpp"
 #include <string_view>
 #include <stdexcept>
+#include <iostream>
 
 Server::Server(std::string_view ip, int p) : ip_address(ip), port(p), running(false), socket() {
     socket.sctp_bind(ip, port);
@@ -25,11 +26,14 @@ void Server::start() {
 void Server::process_requests() {
     while(running) {
         std::vector<uint8_t> recv_buffer(8192);
-        size_t received = socket.sctp_recv_data(recv_buffer);
+        Association_Key key;
+        size_t received = socket.sctp_recv_data(recv_buffer, &key);
         if (received > 0) {
             recv_buffer.resize(received);
             auto request_opt = parse_http_request(recv_buffer);
             if (!request_opt) {
+                received = 0;
+                recv_buffer.clear();
                 continue; 
             }
             Request request = *request_opt;
@@ -45,7 +49,9 @@ void Server::process_requests() {
             }
 
             std::vector<uint8_t> serialized_response = serialize_response(response);
-            socket.sctp_send_data(socket.get_this_association_key(), serialized_response);
+            socket.sctp_send_data(key, serialized_response);
+            received = 0;
+            recv_buffer.clear();
         }
     }
 }

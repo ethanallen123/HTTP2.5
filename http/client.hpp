@@ -18,6 +18,8 @@ class Client {
         std::optional<Response> delete_request(const std::string& uri);
         std::optional<Response> send_request(const Request& request);
         
+        void start();
+        void stop();
         bool connect(const std::string& server_ip, int server_port);
         void disconnect();
         bool is_connected() const;
@@ -27,6 +29,7 @@ class Client {
         std::string ip_address;
         int port;
         bool connected;
+        Association_Key server_association_key;
         
         Request build_request(const std::string& method, const std::string& uri, const std::string& body = "");
 };
